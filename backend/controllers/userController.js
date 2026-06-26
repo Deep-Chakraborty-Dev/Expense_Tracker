@@ -189,9 +189,54 @@ export async function updateProfile(req,res){
             user
         })
     } catch (error) {
-        
+        console.error(error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Server error",
+    });
     }
-    console.log(req.body);
 
+    }
 
+//to change password
+export async function updatePassword(req,res){
+    const {currentPassword,newPassword}= req.body;
+    if(!currentPassword || !newPassword || newPassword.length<8){
+        return res.status(400).json({
+            success:false,
+            message:"wrong password or too short"
+        });
+    }
+    try {
+        const user = await User.findById(req.user.id).select("password")
+        if(!user){
+            return res.status(404).json({
+                success:false,
+                message:"user not found"
+            });
+        }
+
+        const match = await bcrypt.compare(currentPassword,user.password);
+        if(!match){
+            return res.status(404).json({
+                success:false,
+                message:"current password is incorrect"
+            });
+        }
+        user.password=await bcrypt.hash(newPassword,10);
+        await user.save();
+        res.json({
+            success:true,
+            message:"password changed"
+        });
+        
+    } catch (error) {
+        console.error(error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Server error",
+    });
+    }
 }
