@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { type } from './../node_modules/@types/whatwg-url/index.d';
 
 const userSchema = new mongoose.Schema({
     name:{
@@ -17,5 +16,5 @@ const userSchema = new mongoose.Schema({
     }
 });
 
-const userModel = mongoose.model`` || mongoose.model("user",userSchema);
+const userModel = mongoose.models.user || mongoose.model("user", userSchema);
 export default userModel; 
