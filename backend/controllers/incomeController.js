@@ -59,8 +59,49 @@ export async function updateIncome(req,res){
             {_id:id,userId},
             {description,amount},
             {new:true}
-    )
-    } catch (error) {
-        
+    );
+    if(!updateIncome){
+            return res.status(400).json({
+                success:false,
+                message:"Income not found"
+            })
+        }
+
+        res.json({
+            success:true,
+            message:"income updated successfully",
+            data:updateIncome
+        })
     }
+    
+    catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success:false,
+            message:"Server Error"
+        });
+    }
+}
+
+export async function deleteIncome(req,res){
+    try {
+        const income = await incomeModel.findByIdAndDelete({_id:req.param.id})
+        if(!income){
+            res.status(404).json({
+                success:false,
+                message:"Income not found"
+            })
+        }
+        return res.json({
+            success:true,
+            message:"Income deleted successfully"
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success:false,
+            message:"Server Error"
+        });
+    }
+     
 }
