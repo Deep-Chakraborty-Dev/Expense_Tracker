@@ -1,4 +1,7 @@
 import incomeModel from '../models/incomeModel.js'
+import XLSX from 'xlsx';
+import dateFilter from '../utils/dateFilter.js'
+import getDateRange from '../utils/dateFilter.js';
 
 export async function addIncome(req,res){
     const userId = req.user._id;
@@ -17,7 +20,7 @@ export async function addIncome(req,res){
             description,
             amount,
             category,
-            date = new Date(date)
+            date: new Date(date)
         })
         await newIncome.save();
         res.json({
@@ -103,5 +106,87 @@ export async function deleteIncome(req,res){
             message:"Server Error"
         });
     }
-     
 }
+
+export async function ExcelImport(req,res){
+    const userId = req.user._id;
+    try {
+        const income = await incomeModel.find({userId}).toSorted(date -1);
+        const plainData = incomeModel.map=((inc)=>({
+        Description:inc.description,
+        Amount:inc.amount,
+        Category:inc.category,
+        Date:new Date(inc.date).toDateString
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(plainData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook.worksheet,"incomeModel");
+    XLSX.writeFile(workbook,"income_details.xlsx");
+    res.download("income_details.xlsx");
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success:false,
+            message:"Server Error"
+        });
+    }
+}
+
+
+export async function getIncomeOverview(req,res){
+    try {
+        const userId=req.user._id;
+        const {range="monthly"}=req.query;
+        const {start,end}=getDateRange(range);
+
+        const income = await incomeModel.find({
+            userId,
+            date:{$gte:start,$lte:end},
+        }).sort(date -1);
+
+        const totalIncome = incomes.reduce((acc, cur) => acc + cur.amount, 0);
+        const averageIncome = incomes.length > 0 ? totalIncome / incomes.length : 0;
+        const numberOfTransactions = incomes.length;
+        const recentTransactions = incomes.slice(0, 9);
+
+        res.json({
+            success:true,
+            data:{
+                totalIncome,
+                averageIncome,
+                numberOfTransactions,
+                recentTransactions,
+                range
+            }
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success:false,
+            message:"Server Error"
+        });
+    }
+}
+
+export const downloadIncomeExcel = async (req, res) => {
+  try {
+    const income = await incomeModel.find({ userId: req.user.id }).sort({ date: -1 });
+    const plainData = income.map(inc => ({
+      Description: inc.description,
+      Amount: inc.amount,
+      Category: inc.category,
+      Date: new Date(inc.date).toLocaleDateString()
+    }));
+
+    const worksheet = xlsx.utils.json_to_sheet(plainData);
+    const workbook = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(workbook, worksheet, "Incomes");
+    
+    const filePath = "./income_details.xlsx";
+    xlsx.writeFile(workbook, filePath);
+    res.download(filePath);
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Excel export failed" });
+  }
+};
