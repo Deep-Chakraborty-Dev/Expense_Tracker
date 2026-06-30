@@ -15,6 +15,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 
+//DB
+connectDB();
+
 //Routes
 app.use("/api/user",userRouter)
 app.use("/api/income",incomeRouter)
@@ -25,16 +28,6 @@ app.get("/",(req,res)=>{
     res.send("Api is working")
 })
 
-const startServer = async () => {
-    try {
-        await connectDB();
-        app.listen(port, () => {
-            console.log(`app is listening on http://localhost:${port}`)
-        });
-    } catch (error) {
-        console.error("Failed to start server", error);
-        process.exit(1);
-    }
-};
-
-startServer();
+app.listen(port, () =>{
+    console.log(`app is listening on http://localhost:${port}`)
+})

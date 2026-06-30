@@ -20,6 +20,7 @@ const App = () => {
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const loadData = async () => {
     if (!token) return;
@@ -203,6 +204,64 @@ const App = () => {
 
   const expenseMax = Math.max(...expenseChartData.map((item) => item.amount), 1);
   const incomeMax = Math.max(...incomeChartData.map((item) => item.value), 1);
+
+  const aiSummary = dashboard
+    ? `You are currently ${dashboard.savings >= 0 ? 'saving' : 'overspending by'} $${Math.abs(dashboard.savings || 0).toFixed(2)} this month. Your biggest expense category is ${expenseChartData[0]?.category || 'your recent activity'}, and your recent income trend shows ${incomeChartData[0]?.label || 'steady cash flow'}.`
+    : 'Add your first transaction to unlock AI-powered insights and charts.';
+
+  const suggestionList = [
+    dashboard?.savings >= 0
+      ? 'Keep your current savings pace by reviewing one recurring expense this week.'
+      : 'Try cutting back on the largest expense category to improve your balance.',
+    transactions.length > 0
+      ? 'Set a weekly target for income and expense entries to keep your dashboard accurate.'
+      : 'Add a few transactions so the AI can suggest more precise budgeting tips.',
+    expenseChartData.length > 0
+      ? 'Consider planning a budget cap for your top spending category.'
+      : 'Your expense habits will show up here once you log a few entries.'
+  ];
+
+  const renderHistogram = (title, data, colorClass, labelKey, valueKey) => {
+    const maxValue = Math.max(...data.map((entry) => Number(entry[valueKey] || 0)), 1);
+
+    return (
+      <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold">{title} histogram</h3>
+          <p className="text-sm text-slate-400">Recent {title.toLowerCase()} activity</p>
+        </div>
+
+        {data.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-700 px-4 py-6 text-center text-sm text-slate-400">
+            No {title.toLowerCase()} data yet.
+          </div>
+        ) : (
+          <div className="flex items-end justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            {data.map((item, index) => {
+              const value = Number(item[valueKey] || 0);
+              const barHeight = Math.max((value / maxValue) * 100, 10);
+              const label = item[labelKey] || `${title} ${index + 1}`;
+
+              return (
+                <div key={`${title}-${label}-${index}`} className="flex flex-1 flex-col items-center">
+                  <div className="flex h-36 w-full items-end justify-center rounded-xl bg-slate-900/80 p-2">
+                    <div
+                      className={`w-full rounded-t-xl ${colorClass}`}
+                      style={{ height: `${barHeight}%` }}
+                    />
+                  </div>
+                  <div className="mt-3 text-center">
+                    <p className="text-xs font-medium text-slate-200">{label}</p>
+                    <p className="text-[11px] text-slate-400">${value.toFixed(2)}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -437,81 +496,50 @@ const App = () => {
             </section>
           </div>
 
-          <div className="mt-8 rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 to-slate-900 p-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-emerald-400">AI Insights</p>
-                <h2 className="mt-2 text-xl font-semibold">Smart analysis of your income and expenses</h2>
-                <p className="mt-2 text-sm text-slate-400">{dashboard?.aiInsights?.headline || 'Add transactions to unlock personalized suggestions.'}</p>
-              </div>
-              <div className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-sm text-emerald-300">
-                {dashboard?.aiInsights?.score ?? 0}/100 health
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
-              {(dashboard?.aiInsights?.suggestions?.length ? dashboard.aiInsights.suggestions : ['Record more transactions to generate richer insights.']).map((suggestion, index) => (
-                <div key={`${suggestion}-${index}`} className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-200">
-                  {suggestion}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-8 grid gap-6 xl:grid-cols-2">
+          <div className="mt-8 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
             <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
               <div className="mb-4">
-                <h2 className="text-xl font-semibold">Expense</h2>
-                <p className="text-sm text-slate-400">Spending by category as vertical bars</p>
+                <h2 className="text-xl font-semibold">AI insights</h2>
+                <p className="text-sm text-slate-400">Smart analysis of your recent money habits</p>
               </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                <p className="text-sm leading-6 text-slate-300">{aiSummary}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-sm text-emerald-300">
+                    {dashboard?.savings >= 0 ? 'Positive cash flow' : 'Spending above income'}
+                  </span>
+                  <span className="rounded-full bg-sky-500/15 px-3 py-1 text-sm text-sky-300">
+                    {expenseChartData[0]?.category ? `Top category: ${expenseChartData[0].category}` : 'Add expense data'}
+                  </span>
+                  <span className="rounded-full bg-violet-500/15 px-3 py-1 text-sm text-violet-300">
+                    {transactions.length > 0 ? 'Recent activity tracked' : 'Awaiting transactions'}
+                  </span>
+                </div>
 
-              {expenseChartData.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-slate-700 px-4 py-6 text-center text-sm text-slate-400">
-                  No expense data available yet.
-                </div>
-              ) : (
-                <div className="flex h-56 items-end gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-4">
-                  {expenseChartData.map((item) => (
-                    <div key={item.category} className="flex flex-1 flex-col items-center gap-2">
-                      <div className="flex h-40 w-full items-end rounded-t-xl bg-slate-800 p-1">
-                        <div
-                          className="w-full rounded-t-xl bg-gradient-to-t from-rose-500 to-orange-400"
-                          style={{ height: `${Math.max(10, (item.amount / expenseMax) * 100)}%` }}
-                        />
-                      </div>
-                      <span className="text-center text-[11px] text-slate-400">{item.category}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+                <button
+                  onClick={() => setShowSuggestions((prev) => !prev)}
+                  className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-300 hover:bg-emerald-500/20"
+                >
+                  {showSuggestions ? 'Hide suggestions' : 'Suggestions'}
+                </button>
+
+                {showSuggestions && (
+                  <ul className="mt-4 space-y-2 rounded-xl border border-slate-800 bg-slate-900/70 p-3 text-sm text-slate-300">
+                    {suggestionList.map((item, index) => (
+                      <li key={index} className="flex gap-2">
+                        <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-400" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </section>
 
-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-              <div className="mb-4">
-                <h2 className="text-xl font-semibold">Income</h2>
-                <p className="text-sm text-slate-400">Recent income entries as vertical bars</p>
-              </div>
-
-              {incomeChartData.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-slate-700 px-4 py-6 text-center text-sm text-slate-400">
-                  No income data available yet.
-                </div>
-              ) : (
-                <div className="flex h-56 items-end gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-4">
-                  {incomeChartData.map((item) => (
-                    <div key={item.label} className="flex flex-1 flex-col items-center gap-2">
-                      <div className="flex h-40 w-full items-end rounded-t-xl bg-slate-800 p-1">
-                        <div
-                          className="w-full rounded-t-xl bg-gradient-to-t from-emerald-500 to-cyan-400"
-                          style={{ height: `${Math.max(10, (item.value / incomeMax) * 100)}%` }}
-                        />
-                      </div>
-                      <span className="text-center text-[11px] text-slate-400">{item.label}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
+            <div className="grid gap-6">
+              {renderHistogram('Income', incomeChartData, 'bg-emerald-500', 'label', 'value')}
+              {renderHistogram('Expense', expenseChartData, 'bg-rose-500', 'category', 'amount')}
+            </div>
           </div>
         </main>
       )}
