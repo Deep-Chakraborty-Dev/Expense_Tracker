@@ -1,6 +1,15 @@
 import mongoose from "mongoose";
 
-export const connectDB = async() =>{
-    await mongoose.connect("mongodb+srv://iamdeepchakraborty19112000_db_user:eR9siNpnKiDzi9Cc@cluster0.9iagagh.mongodb.net/Expense")
-    .then(() => console.log("DB CONNECTED"));
-}
+export const connectDB = async () => {
+    const mongoUri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/expense_tracker";
+
+    try {
+        await mongoose.connect(mongoUri, {
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+        });
+        console.log("DB CONNECTED");
+    } catch (error) {
+        console.error("DB CONNECTION FAILED:", error.message);
+    }
+};

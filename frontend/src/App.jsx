@@ -10,6 +10,30 @@ const initialForm = {
   date: new Date().toISOString().split('T')[0]
 };
 
+const formatCurrency = (value) => `$${Number(value || 0).toFixed(2)}`;
+
+const getMessageStyles = (type) =>
+  type === 'error'
+    ? 'border-rose-500/30 bg-rose-500/10 text-rose-200'
+    : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200';
+
+const inputClassName =
+  'w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 outline-none ring-0';
+
+const StatCard = ({ label, value }) => (
+  <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+    <p className="text-sm text-slate-400">{label}</p>
+    <h3 className="mt-2 text-2xl font-semibold">{value}</h3>
+  </div>
+);
+
+const Field = ({ label, name, type = 'text', ...props }) => (
+  <div>
+    <label className="mb-1 block text-sm text-slate-300">{label}</label>
+    <input type={type} name={name} className={inputClassName} {...props} />
+  </div>
+);
+
 const App = () => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [authMode, setAuthMode] = useState('login');
@@ -21,6 +45,14 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const clearSession = () => {
+    localStorage.removeItem('token');
+    setToken(null);
+    setUser(null);
+    setDashboard(null);
+    setTransactions([]);
+  };
 
   const loadData = async () => {
     if (!token) return;
@@ -42,7 +74,13 @@ const App = () => {
         })
       ]);
 
-      const meData = meRes.ok ? await meRes.json() : null;
+      if (!meRes.ok) {
+        clearSession();
+        setMessage({ type: 'error', text: 'Session expired. Please log in again.' });
+        return;
+      }
+
+      const meData = await meRes.json();
       const dashboardData = dashboardRes.ok ? await dashboardRes.json() : null;
       const incomeData = incomeRes.ok ? await incomeRes.json() : [];
       const expenseData = expenseRes.ok ? await expenseRes.json() : [];
@@ -63,7 +101,8 @@ const App = () => {
       setTransactions(mergedTransactions);
     } catch (error) {
       console.error(error);
-      setMessage({ type: 'error', text: 'Unable to load data right now.' });
+      clearSession();
+      setMessage({ type: 'error', text: 'Unable to load data right now. Please log in again.' });
     } finally {
       setLoading(false);
     }
@@ -86,10 +125,15 @@ const App = () => {
     setMessage({ type: '', text: '' });
 
     try {
+      const formData = new FormData(event.currentTarget);
+      const email = formData.get('email')?.toString().trim();
+      const password = formData.get('password')?.toString().trim();
+      const name = formData.get('name')?.toString().trim();
+
       const endpoint = authMode === 'login' ? '/user/login' : '/user/register';
       const payload = authMode === 'login'
-        ? { email: authData.email, password: authData.password }
-        : authData;
+        ? { email, password }
+        : { name, email, password };
 
       const response = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
@@ -105,6 +149,8 @@ const App = () => {
 
       localStorage.setItem('token', data.token);
       setToken(data.token);
+      setUser(data.user || null);
+      setAuthData({ name: '', email: '', password: '' });
       setMessage({ type: 'success', text: authMode === 'login' ? 'Welcome back!' : 'Account created successfully!' });
     } catch (error) {
       setMessage({ type: 'error', text: error.message });
@@ -114,11 +160,7 @@ const App = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
-    setUser(null);
-    setDashboard(null);
-    setTransactions([]);
+    clearSession();
     setMessage({ type: 'success', text: 'You have been logged out.' });
   };
 
@@ -206,7 +248,7 @@ const App = () => {
   const incomeMax = Math.max(...incomeChartData.map((item) => item.value), 1);
 
   const aiSummary = dashboard
-    ? `You are currently ${dashboard.savings >= 0 ? 'saving' : 'overspending by'} $${Math.abs(dashboard.savings || 0).toFixed(2)} this month. Your biggest expense category is ${expenseChartData[0]?.category || 'your recent activity'}, and your recent income trend shows ${incomeChartData[0]?.label || 'steady cash flow'}.`
+    ? `You are currently ${dashboard.savings >= 0 ? 'saving' : 'overspending by'} ${formatCurrency(Math.abs(dashboard.savings || 0))} this month. Your biggest expense category is ${expenseChartData[0]?.category || 'your recent activity'}, and your recent income trend shows ${incomeChartData[0]?.label || 'steady cash flow'}.`
     : 'Add your first transaction to unlock AI-powered insights and charts.';
 
   const suggestionList = [
@@ -288,7 +330,7 @@ const App = () => {
       </header>
 
       {message.text && (
-        <div className={`mx-auto mt-6 max-w-7xl rounded-lg border px-4 py-3 text-sm ${message.type === 'error' ? 'border-rose-500/30 bg-rose-500/10 text-rose-200' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'}`}>
+        <div className={`mx-auto mt-6 max-w-7xl rounded-lg border px-4 py-3 text-sm ${getMessageStyles(message.type)}`}>
           {message.text}
         </div>
       )}
@@ -318,39 +360,33 @@ const App = () => {
 
             <form onSubmit={handleAuthSubmit} className="space-y-4">
               {authMode === 'register' && (
-                <div>
-                  <label className="mb-1 block text-sm text-slate-300">Name</label>
-                  <input
-                    name="name"
-                    value={authData.name}
-                    onChange={handleAuthChange}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 outline-none ring-0"
-                    placeholder="Your name"
-                  />
-                </div>
+                <Field
+                  label="Name"
+                  name="name"
+                  value={authData.name}
+                  onChange={handleAuthChange}
+                  placeholder="Your name"
+                  required
+                />
               )}
-              <div>
-                <label className="mb-1 block text-sm text-slate-300">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={authData.email}
-                  onChange={handleAuthChange}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 outline-none ring-0"
-                  placeholder="you@example.com"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm text-slate-300">Password</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={authData.password}
-                  onChange={handleAuthChange}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 outline-none ring-0"
-                  placeholder="At least 8 characters"
-                />
-              </div>
+              <Field
+                label="Email"
+                name="email"
+                type="email"
+                value={authData.email}
+                onChange={handleAuthChange}
+                placeholder="you@example.com"
+                required
+              />
+              <Field
+                label="Password"
+                name="password"
+                type="password"
+                value={authData.password}
+                onChange={handleAuthChange}
+                placeholder="At least 8 characters"
+                required
+              />
 
               <button
                 type="submit"
@@ -365,18 +401,9 @@ const App = () => {
       ) : (
         <main className="mx-auto max-w-7xl px-6 py-8">
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <p className="text-sm text-slate-400">Total Balance</p>
-              <h3 className="mt-2 text-2xl font-semibold">${dashboard?.totalBalance?.toFixed(2) || '0.00'}</h3>
-            </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <p className="text-sm text-slate-400">Monthly Income</p>
-              <h3 className="mt-2 text-2xl font-semibold">${dashboard?.monthlyIncome?.toFixed(2) || '0.00'}</h3>
-            </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <p className="text-sm text-slate-400">Monthly Expenses</p>
-              <h3 className="mt-2 text-2xl font-semibold">${dashboard?.monthlyExpense?.toFixed(2) || '0.00'}</h3>
-            </div>
+            <StatCard label="Total Balance" value={formatCurrency(dashboard?.totalBalance)} />
+            <StatCard label="Monthly Income" value={formatCurrency(dashboard?.monthlyIncome)} />
+            <StatCard label="Monthly Expenses" value={formatCurrency(dashboard?.monthlyExpense)} />
           </div>
 
           <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
@@ -398,54 +425,42 @@ const App = () => {
               </div>
 
               <form onSubmit={handleTransactionSubmit} className="space-y-4">
-                <div>
-                  <label className="mb-1 block text-sm text-slate-300">Description</label>
-                  <input
-                    name="description"
-                    value={form.description}
-                    onChange={handleTransactionChange}
-                    required
-                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2"
-                    placeholder="What was this for?"
-                  />
-                </div>
+                <Field
+                  label="Description"
+                  name="description"
+                  value={form.description}
+                  onChange={handleTransactionChange}
+                  required
+                  placeholder="What was this for?"
+                />
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-sm text-slate-300">Amount</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      name="amount"
-                      value={form.amount}
-                      onChange={handleTransactionChange}
-                      required
-                      className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2"
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm text-slate-300">Date</label>
-                    <input
-                      type="date"
-                      name="date"
-                      value={form.date}
-                      onChange={handleTransactionChange}
-                      required
-                      className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm text-slate-300">Category</label>
-                  <input
-                    name="category"
-                    value={form.category}
+                  <Field
+                    label="Amount"
+                    name="amount"
+                    type="number"
+                    step="0.01"
+                    value={form.amount}
                     onChange={handleTransactionChange}
                     required
-                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2"
-                    placeholder="Food"
+                    placeholder="0.00"
+                  />
+                  <Field
+                    label="Date"
+                    name="date"
+                    type="date"
+                    value={form.date}
+                    onChange={handleTransactionChange}
+                    required
                   />
                 </div>
+                <Field
+                  label="Category"
+                  name="category"
+                  value={form.category}
+                  onChange={handleTransactionChange}
+                  required
+                  placeholder="Food"
+                />
                 <button
                   type="submit"
                   disabled={loading}
@@ -480,7 +495,7 @@ const App = () => {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className={`font-semibold ${item.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          {item.type === 'income' ? '+' : '-'}${Number(item.amount).toFixed(2)}
+                          {item.type === 'income' ? '+' : '-'}{formatCurrency(item.amount)}
                         </span>
                         <button
                           onClick={() => handleDelete(item.type, item._id)}
