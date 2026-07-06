@@ -20,8 +20,8 @@ const getMessageStyles = (type) =>
 const inputClassName =
   'w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 outline-none ring-0';
 
-const StatCard = ({ label, value }) => (
-  <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+const StatCard = ({ label, value, delayClass = '' }) => (
+  <div className={`animate__animated animate__fadeInUp ${delayClass} rounded-2xl border border-slate-800 bg-slate-900 p-5`}>
     <p className="text-sm text-slate-400">{label}</p>
     <h3 className="mt-2 text-2xl font-semibold">{value}</h3>
   </div>
@@ -307,7 +307,7 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur">
+      <header className="animate__animated animate__fadeInDown border-b border-slate-800 bg-slate-900/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-emerald-400">Expense Tracker</p>
@@ -337,7 +337,7 @@ const App = () => {
 
       {!token ? (
         <div className="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center px-6 py-10">
-          <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-2xl shadow-black/30">
+          <div className="animate__animated animate__zoomIn w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-2xl shadow-black/30">
             <div className="mb-6 text-center">
               <p className="text-sm uppercase tracking-[0.3em] text-emerald-400">Welcome</p>
               <h2 className="mt-2 text-2xl font-semibold">Track income, expenses and savings</h2>
@@ -401,9 +401,9 @@ const App = () => {
       ) : (
         <main className="mx-auto max-w-7xl px-6 py-8">
           <div className="grid gap-4 md:grid-cols-3">
-            <StatCard label="Total Balance" value={formatCurrency(dashboard?.totalBalance)} />
-            <StatCard label="Monthly Income" value={formatCurrency(dashboard?.monthlyIncome)} />
-            <StatCard label="Monthly Expenses" value={formatCurrency(dashboard?.monthlyExpense)} />
+            <StatCard label="Total Balance" value={formatCurrency(dashboard?.totalBalance)} delayClass="animate__delay-1s" />
+            <StatCard label="Monthly Income" value={formatCurrency(dashboard?.monthlyIncome)} delayClass="animate__delay-2s" />
+            <StatCard label="Monthly Expenses" value={formatCurrency(dashboard?.monthlyExpense)} delayClass="animate__delay-3s" />
           </div>
 
           <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
@@ -512,7 +512,7 @@ const App = () => {
           </div>
 
           <div className="mt-8 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+            <section className="animate__animated animate__fadeInUp rounded-2xl border border-slate-800 bg-slate-900 p-6">
               <div className="mb-4">
                 <h2 className="text-xl font-semibold">AI insights</h2>
                 <p className="text-sm text-slate-400">Smart analysis of your recent money habits</p>
