@@ -27,6 +27,13 @@ const StatCard = ({ label, value, delayClass = '' }) => (
   </div>
 );
 
+const SmallCard = ({ label, value }) => (
+  <div className="rounded-3xl border border-slate-800 bg-slate-900 p-4 text-center">
+    <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{label}</p>
+    <p className="mt-3 text-2xl font-semibold text-slate-100">{value}</p>
+  </div>
+);
+
 const Field = ({ label, name, type = 'text', ...props }) => (
   <div>
     <label className="mb-1 block text-sm text-slate-300">{label}</label>
@@ -247,6 +254,25 @@ const App = () => {
   const expenseMax = Math.max(...expenseChartData.map((item) => item.amount), 1);
   const incomeMax = Math.max(...incomeChartData.map((item) => item.value), 1);
 
+  const smallCardsData = [
+    {
+      label: 'Savings rate',
+      value: dashboard
+        ? `${Math.round(((dashboard.savings || 0) / Math.max(dashboard.monthlyIncome || 1, 1)) * 100)}%`
+        : '—'
+    },
+    {
+      label: 'Expense ratio',
+      value: dashboard
+        ? `${Math.round(((dashboard.monthlyExpense || 0) / Math.max(dashboard.monthlyIncome || 1, 1)) * 100)}%`
+        : '—'
+    },
+    {
+      label: 'Transactions this month',
+      value: transactions.filter((item) => new Date(item.date).getMonth() === new Date().getMonth()).length
+    }
+  ];
+
   const aiSummary = dashboard
     ? `You are currently ${dashboard.savings >= 0 ? 'saving' : 'overspending by'} ${formatCurrency(Math.abs(dashboard.savings || 0))} this month. Your biggest expense category is ${expenseChartData[0]?.category || 'your recent activity'}, and your recent income trend shows ${incomeChartData[0]?.label || 'steady cash flow'}.`
     : 'Add your first transaction to unlock AI-powered insights and charts.';
@@ -405,6 +431,20 @@ const App = () => {
             <StatCard label="Monthly Income" value={formatCurrency(dashboard?.monthlyIncome)} delayClass="animate__delay-2s" />
             <StatCard label="Monthly Expenses" value={formatCurrency(dashboard?.monthlyExpense)} delayClass="animate__delay-3s" />
           </div>
+
+          <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900 p-5">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold">Quick overview</h2>
+                <p className="text-sm text-slate-400">Small cards with fast budget insights</p>
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {smallCardsData.map((card) => (
+                <SmallCard key={card.label} label={card.label} value={card.value} />
+              ))}
+            </div>
+          </section>
 
           <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
             <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
