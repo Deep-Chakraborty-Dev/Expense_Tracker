@@ -22,14 +22,14 @@ const inputClassName =
 
 const StatCard = ({ label, value, delayClass = '' }) => (
   <div className={`animate__animated animate__fadeInUp ${delayClass} rounded-2xl border border-slate-800 bg-slate-900 p-5`}>
-    <p className="text-sm text-slate-400">{label}</p>
-    <h3 className="mt-2 text-2xl font-semibold">{value}</h3>
+    <p className="text-sm text-cyan-400">{label}</p>
+    <h3 className="mt-2 text-2xl font-semibold text-cyan-50">{value}</h3>
   </div>
 );
 
 const SmallCard = ({ label, value }) => (
   <div className="rounded-3xl border border-slate-800 bg-slate-900 p-4 text-center">
-    <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{label}</p>
+    <p className="text-xs uppercase tracking-[0.2em] text-amber-400">{label}</p>
     <p className="mt-3 text-2xl font-semibold text-slate-100">{value}</p>
   </div>
 );
@@ -336,8 +336,8 @@ const App = () => {
       <header className="animate__animated animate__fadeInDown border-b border-slate-800 bg-slate-900/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-emerald-400">Expense Tracker</p>
-            <h1 className="text-xl font-semibold">Personal finance dashboard</h1>
+            <p className="text-sm uppercase tracking-[0.3em] text-cyan-400">Expense Tracker</p>
+            <h1 className="text-xl font-semibold text-cyan-100">Personal finance dashboard</h1>
           </div>
           {token && user && (
             <div className="flex items-center gap-3">
@@ -435,7 +435,7 @@ const App = () => {
           <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900 p-5">
             <div className="mb-4 flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold">Quick overview</h2>
+                <h2 className="text-lg font-semibold text-amber-300">Quick overview</h2>
                 <p className="text-sm text-slate-400">Small cards with fast budget insights</p>
               </div>
             </div>
@@ -528,7 +528,7 @@ const App = () => {
                   transactions.map((item) => (
                     <div key={`${item.type}-${item._id}`} className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3">
                       <div>
-                        <p className="font-medium">{item.description}</p>
+                        <p className="font-medium text-cyan-100">{item.description}</p>
                         <p className="text-sm text-slate-400">
                           {item.category} • {new Date(item.date).toLocaleDateString()}
                         </p>
