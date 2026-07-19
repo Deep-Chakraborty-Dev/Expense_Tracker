@@ -519,7 +519,7 @@ const App = () => {
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {transactions.length === 0 && !loading ? (
                   <div className="rounded-xl border border-dashed border-slate-700 px-4 py-6 text-center text-sm text-slate-400">
                     No transactions yet.
