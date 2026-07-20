@@ -528,7 +528,7 @@ const App = () => {
                   transactions.map((item) => (
                     <div key={`${item.type}-${item._id}`} className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3">
                       <div>
-                        <p className="font-medium text-cyan-100">{item.description}</p>
+                        <p className="font-medium text-cyan-200">{item.description}</p>
                         <p className="text-sm text-slate-400">
                           {item.category} • {new Date(item.date).toLocaleDateString()}
                         </p>
