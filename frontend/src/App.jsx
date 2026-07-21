@@ -512,7 +512,7 @@ const App = () => {
             </section>
 
             <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-5 flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-semibold">Recent transactions</h2>
                   <p className="text-sm text-slate-400">Manage your latest entries</p>
